@@ -1,6 +1,7 @@
+from django.db.models import QuerySet
 from rest_framework.request import Request
 from rest_framework.response import  Response
-from rest_framework import status, response
+from rest_framework import status, generics,mixins
 from rest_framework.decorators import api_view,APIView
 from posts.models import Post
 from posts.serializers import PostSerializer
@@ -30,53 +31,30 @@ def homepage(request: Request):
     return Response({'message': 'Hello World!'})
 
 
-class PostListCreateView(APIView):
+class PostListCreateView(generics.GenericAPIView,mixins.ListModelMixin,mixins.CreateModelMixin):
     serializer_class = PostSerializer
-    def get(self,request:Request,*args,**kwargs):
-        posts = Post.objects.all()
-        serializer = self.serializer_class(instance=posts,many=True)
-        return Response(data=serializer.data,status=status.HTTP_200_OK)
+    queryset = Post.objects.all()
+    def get(self,request: Request,*args,**kwargs):
+        return self.list(request,*args,**kwargs)
 
-    def post(self,request:Request,*args,**kwargs):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            response = {
-                'message': 'Post created successfully',
-                'data': serializer.data
-            }
-            return Response(data=response,status=status.HTTP_201_CREATED)
+    def post(self,request: Request,*args,**kwargs):
+        return self.create(request,*args,**kwargs)
 
 
 
 
-class PostRetrieveUpdateDeleteView(APIView):
+class PostRetrieveUpdateDeleteView(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins.DestroyModelMixin):
     serializer_class = PostSerializer
-    def get (self,request:Request,post_id:int):
-        post = get_object_or_404(Post,pk=post_id)
-        serializer = self.serializer_class(instance=post)
-        return Response(data=serializer.data,status=status.HTTP_200_OK)
+    queryset = Post.objects.all()
 
-    def put(self,request:Request,post_id:int):
-        post = get_object_or_404(Post,pk=post_id)
-        serializer = self.serializer_class(instance=post,data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            response = {
-                'message': 'Post updated successfully',
-                'data': serializer.data
-            }
-            return Response(data=response,status=status.HTTP_200_OK)
+    def get(self,request: Request,*args,**kwargs):
+        return self.retrieve(request,*args,**kwargs)
 
-        return Response(data=serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    def put(self,request: Request,*args,**kwargs):
+        return self.update(request,*args,**kwargs)
 
-    def delete(self,request:Request,post_id:int):
-        post = get_object_or_404(Post,pk=post_id)
-        post.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
+    def delete(self,request: Request,*args,**kwargs):
+        return self.destroy(request,*args,**kwargs)
 
 
 
